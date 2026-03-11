@@ -93,7 +93,7 @@
 	</dependencies>
 	<properties>
 		<nam.version>4.2.2</nam.version>
-		<servlet.version>3.0.1</servlet.version>
+		<servlet.version>6.0.0</servlet.version>
 		<mockito.version>2.3.4</mockito.version>
 		<wiremock.version>1.58</wiremock.version>
 		<junit.version>4.11</junit.version>

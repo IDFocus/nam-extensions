@@ -50,8 +50,8 @@
 		    <version>20180130</version>
 		</dependency>
 		<dependency>
-			<groupId>javax.servlet</groupId>
-			<artifactId>javax.servlet-api</artifactId>
+			<groupId>jakarta.servlet</groupId>
+			<artifactId>jakarta.servlet-api</artifactId>
 			<version>${servlet.version}</version>
 			<scope>provided</scope>
 		</dependency>
@@ -105,7 +105,7 @@
 	</dependencies>
 	<properties>
 		<nam.version>4.2.2</nam.version>
-		<servlet.version>3.0.1</servlet.version>
+		<servlet.version>6.0.0</servlet.version>
 		<junit.version>4.11</junit.version>
 		<mockito.version>2.3.4</mockito.version>
 		<zxing.version>3.2.1</zxing.version>

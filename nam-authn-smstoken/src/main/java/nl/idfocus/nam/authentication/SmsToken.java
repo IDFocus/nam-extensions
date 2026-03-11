@@ -290,7 +290,7 @@ public class SmsToken extends LocalAuthenticationClass
 		// Load the configured SMS provider
 		if ( SmsProvider.class.isAssignableFrom( Class.forName( classname ) ) )
 		{
-			return (SmsProvider) Class.forName( classname ).newInstance();
+			return (SmsProvider) Class.forName( classname ).getDeclaredConstructor().newInstance();
 		}
 		throw new Exception("Class "+classname+" does not implement "+SmsProvider.class.getName() );
 	}

@@ -15,7 +15,8 @@ import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.BasicAttribute;
-import javax.servlet.http.Cookie;
+import jakarta.servlet.http.Cookie;
+
 
 import nl.idfocus.nam.totp.Authenticator;
 import nl.idfocus.nam.totp.TOTPConstants;
@@ -33,6 +34,7 @@ import com.novell.nidp.authentication.local.LocalAuthenticationClass;
 import com.novell.nidp.authentication.local.PageToShow;
 import com.novell.nidp.common.authority.UserAuthority;
 import com.novell.nidp.common.authority.ldap.LDAPPrincipal;
+
 
 /**
  * Custom Authentication class for NetIQ Access Manager<br/>

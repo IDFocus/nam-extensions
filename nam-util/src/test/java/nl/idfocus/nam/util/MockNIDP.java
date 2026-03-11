@@ -29,9 +29,9 @@ import java.util.logging.Level;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.BasicAttribute;
 import javax.naming.directory.BasicAttributes;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -154,7 +154,7 @@ public class MockNIDP {
         HttpServletRequest req = mock(HttpServletRequest.class);
         given(req.getRequestURL()).willReturn(new StringBuffer("http://request.url/path?query"));
         given(req.getScheme()).willReturn("https");
-        given(req.getLocale()).willReturn(new Locale("en"));
+        given(req.getLocale()).willReturn(Locale.of("en"));
         HttpSession session = getHttpSession();
         given(req.getSession()).willReturn(session);
         given(req.getParameter(SAMLConstants.PARM_REQUEST)).willReturn("hZJBj9owEIXvlfofLN8TbwhlFwuQUlBVpG2LgO2hN8cZwKpjp55Js+2vrzcLLK1W9OqZb96bN56gqu2gkUVLB7eGHy0gscfaOpTPlSlvg5NeoUHpVA0oSctN8eleDtIb2QRPXnvLL5nriEKEQMY7zpaLKTfVqLzNYKfHAz2EYVWVKr/Vu1yXd6MSxmV2x9lXCBiBKY98pBBbWDok5Sg+3WSjJBsk2Xib5TLP5bvhN84WcQ3jFPXUgahBKYT1e+MoVtIDkFbfU2eFM1UjetcC0XNWnNzNvcO2hrCB8NNoeFjfvwzquu6fMU/xHTtRFBo5Wx2TeW9cZdz+eiblcxPKj9vtKll92Wz57O0bxia9M9lvHGYX8kkHZeMDKZsordPoIil/p9ZrZSfiL+hlTCOP94Wqv3bckOCR+o6z1GVlbuOt1rA7C1dmbyqBoNsAJ5lXgV5U/Ff15OtzDGS5WHlr9C9WWOu7eQBFMOUUWuDsgw+1ousRPr2YKtn1rZKCcmjAEWciSp29XH7z2R8=");
