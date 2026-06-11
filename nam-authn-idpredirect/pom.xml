@@ -110,7 +110,7 @@
 		</dependency>
 	</dependencies>
 	<properties>
-		<nam.version>4.2.2</nam.version>
+		<nam.version>5.0.4</nam.version>
 		<servlet.version>3.0.1</servlet.version>
 		<mockito.version>2.3.4</mockito.version>
 		<wiremock.version>1.58</wiremock.version>

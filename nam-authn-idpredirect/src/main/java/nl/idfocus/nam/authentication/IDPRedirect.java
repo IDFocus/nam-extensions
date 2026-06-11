@@ -21,13 +21,16 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.novell.nidp.NIDPConstants;
+import com.novell.nidp.NIDPError;
 import com.novell.nidp.NIDPException;
+import com.novell.nidp.NIDPMessage;
 import com.novell.nidp.NIDPPrincipal;
 import com.novell.nidp.authentication.AuthnConstants;
 import com.novell.nidp.authentication.local.LocalAuthenticationClass;
 import com.novell.nidp.authentication.local.PageToShow;
 import com.novell.nidp.common.authority.UserAuthority;
 import com.novell.nidp.common.protocol.AuthnRequest;
+import com.novell.nidp.common.protocol.AuthnResponse;
 import com.novell.nidp.common.provider.MeDescriptor;
 import com.novell.nidp.common.provider.MeProvider;
 import com.novell.nidp.common.xml.w3c.XMLException;
@@ -43,7 +46,7 @@ import nl.idfocus.nam.util.ExistingPrincipalResolver;
 import nl.idfocus.nam.util.ParameterDebugger;
 
 /**
- * Authentication class for NetIQ Access Manager 4.x that allows immediate
+ * Authentication class for NetIQ Access Manager 5.0.x that allows immediate
  * redirection to an external IDP.
  * 
  * @author mvreijn@idfocus.nl
@@ -64,6 +67,7 @@ public class IDPRedirect extends LocalAuthenticationClass
 	private static final String	PROPERTY_IDP_ID				= "IdpId";
 	private static final String	PROPERTY_IDP_HANDLER		= "Protocol";
 	private static final String	PROPERTY_CANCEL_PAGE		= "CancelJSP";
+	private static final String	PROPERTY_CANCEL_MESSAGE		= "CancelMessage";
 	private static final String	PROPERTY_INTERMEDIATE_PAGE	= "IntermediateJSP";
 	private static final String	PROPERTY_ERROR_PAGE			= "ErrorJSP";
 	private static final String	CANCEL_MESSAGE				= "The user cancelled.";
@@ -74,6 +78,7 @@ public class IDPRedirect extends LocalAuthenticationClass
 	private String				intermediatePage;
 	private String				errorPage;
 	private String				cancelPage;
+	private String				cancelMessage;
 	private boolean				debugMode;
 
 	private static final String PKGBUILD = IDPRedirect.class.getPackage().getImplementationVersion();
@@ -88,6 +93,7 @@ public class IDPRedirect extends LocalAuthenticationClass
 		intermediatePage = props.getProperty(PROPERTY_INTERMEDIATE_PAGE);
 		errorPage = props.getProperty(PROPERTY_ERROR_PAGE);
 		cancelPage = props.getProperty(PROPERTY_CANCEL_PAGE, errorPage);
+		cancelMessage = props.getProperty(PROPERTY_CANCEL_MESSAGE, CANCEL_MESSAGE);
 	}
 
 	@Override
@@ -161,9 +167,17 @@ public class IDPRedirect extends LocalAuthenticationClass
 
 	private boolean hasSAMLResponse()
 	{
-		String response = m_Request.getParameter(SAMLConstants.PARM_RESPONSE);
-		if (response != null)
+		if (m_Request.getParameter(SAMLConstants.PARM_RESPONSE) != null)
+		{
+			logger.log(Level.FINE, SAMLConstants.PARM_RESPONSE+" parameter detected");
 			return true;
+		}
+		if (m_Request.getParameter(SAMLConstants.PARM_ARTIFACT) != null)
+		{
+			logger.log(Level.FINE, SAMLConstants.PARM_ARTIFACT+" parameter detected");
+			return true;
+		}
+		logger.log(Level.FINE, "*** No "+SAMLConstants.PARM_RESPONSE+" or "+SAMLConstants.PARM_ARTIFACT+" detected");
 		return false;
 	}
 
@@ -177,16 +191,28 @@ public class IDPRedirect extends LocalAuthenticationClass
 
 	private boolean isCancelMessage()
 	{
+		NIDPMessage msg = m_Session.getMessage();
+		if (msg != null)
+		{
+			logger.log(Level.FINE, "Session Message: " + msg.getUserMessage());
+			NIDPError err = (NIDPError)msg;
+			logger.log(Level.FINE, "NIDP error code " + err.getCauseCode() + ": " + err.getCauseStr());
+			// The nidp exception message contains the saml status, but not "cancelled"
+			// com.novell.nidp.NIDPException: urn:oasis:names:tc:SAML:2.0:status:Responder->urn:oasis:names:tc:SAML:2.0:status:AuthnFailed
+			logger.log(Level.FINE, "NIDP exception message: " + err.getNIDPExceptionMsg());
+		}
 		try
 		{
 			SAML2Status status = getAuthenticationStatus();
 			String statusMessage = status.getStatusMessage();
+			if (statusMessage == null)
+				statusMessage = "";
 			logger.log(Level.FINE, "Status Message: " + statusMessage);
 			SAML2StatusCode code = status.getStatusCode();
 			if (SAML2PConstants.STATUS_RESPONDER.equals(code.getTopLevelStatus())
 					&& SAML2PConstants.STATUS_AUTHNFAILED.equals(code.getSecondLevelStatus())
 					&& (!compareExactCancelMessage
-							|| CANCEL_MESSAGE.equalsIgnoreCase(statusMessage)))
+							|| cancelMessage.equalsIgnoreCase(statusMessage.trim())))
 			{
 				return true;
 			}
@@ -201,17 +227,27 @@ public class IDPRedirect extends LocalAuthenticationClass
 	private SAML2Status getAuthenticationStatus() throws NIDPException
 	{
 		SAML2AuthnResponse samlResponse = getAuthenticationResponse(m_Request);
-		logger.log(Level.FINER, "SAML Response: " + samlResponse.toString(0));
+		logger.log(Level.FINE, "SAML Response: " + samlResponse.toString(0));
 		return samlResponse.getStatus();
 	}
 
 	private SAML2AuthnResponse getAuthenticationResponse(HttpServletRequest servletRequest)
 			throws NIDPException
 	{
+		AuthnResponse aResponse = m_SessionData.getAuthnResponse();
+		if (aResponse == null)
+			logger.log(Level.SEVERE, "Authn response is null!");
+		else
+			logger.log(Level.INFO, "Authn response: "+aResponse.getClass().getName());
+		if (aResponse instanceof SAML2AuthnResponse) {
+			return (SAML2AuthnResponse)aResponse;
+		}
+		// TODO check if we still need the code below.
 		String response = servletRequest.getParameter(SAMLConstants.PARM_RESPONSE);
+		logger.log(Level.INFO, "Raw response: " + response + ".");
 		Document samlResponse = getDocumentFromSAMLResponse(response);
-		logger.log(Level.FINEST, "Created response document: " + samlResponse);
-		Element el = samlResponse.getDocumentElement();
+		logger.log(Level.FINE, "Created response document: " + samlResponse);
+		Element el = samlResponse.getDocumentElement();			
 		try
 		{
 			return new SAML2AuthnResponse(el, getMeProvider(true), getBinding(servletRequest),
@@ -225,11 +261,11 @@ public class IDPRedirect extends LocalAuthenticationClass
 
 	private Document getDocumentFromSAMLResponse(String response) throws NIDPException
 	{
-		logger.log(Level.FINEST, "Encoded response: " + response);
+		logger.log(Level.FINE, "Encoded response: " + response);
 		try
 		{
 			String decodedResponse = new String(Base64.decode(response));
-			logger.log(Level.FINER, "Decoded response: " + decodedResponse);
+			logger.log(Level.FINE, "Decoded response: " + decodedResponse);
 			DOMParser parser = new DOMParser();
 			parser.parse(new InputSource(new StringReader(decodedResponse)));
 			return parser.getDocument();
@@ -283,14 +319,14 @@ public class IDPRedirect extends LocalAuthenticationClass
 
 	private void tagSessionAsCancelled()
 	{
-		m_Request.getSession().setAttribute(CANCEL_TAG, CANCEL_MESSAGE);
+		m_Request.getSession().setAttribute(CANCEL_TAG, cancelMessage);
 	}
 
 	private boolean isRestartAfterCancel()
 	{
 		Object cancelled = m_Request.getSession().getAttribute(CANCEL_TAG);
 		m_Request.getSession().removeAttribute(CANCEL_TAG);
-		return CANCEL_MESSAGE.equals(cancelled);
+		return cancelMessage.equals(cancelled);
 	}
 
 	private int redirectToExternalIdp()
