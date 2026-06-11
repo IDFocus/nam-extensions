@@ -3,16 +3,16 @@ package nl.idfocus.nam.filter;
 import java.io.IOException;
 import java.util.Locale;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.FilterConfig;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import org.apache.commons.lang.LocaleUtils;
 import org.apache.commons.lang.StringUtils;
@@ -194,21 +194,21 @@ public class LocaleChangeFilter implements Filter {
 			Locale systemLocale) {
 		if (querystringLocale != null) {
 			logger.debug("[determineOverridingLocale] selected querystringLocale: {}", querystringLocale.getLanguage() );
-			return new Locale(querystringLocale.getLanguage());
+			return Locale.of(querystringLocale.getLanguage());
 		}
 
 		if (cookieLocale != null) {
 			logger.debug("[determineOverridingLocale] selected cookieLocale: {}", cookieLocale.getLanguage() );
-			return new Locale(cookieLocale.getLanguage());
+			return Locale.of(cookieLocale.getLanguage());
 		}
 
 		if (acceptHeaderLocale != null) {
 			logger.debug("[determineOverridingLocale] selected acceptHeaderLocale: {}",acceptHeaderLocale.getLanguage() );
-			return new Locale(acceptHeaderLocale.getLanguage());
+			return Locale.of(acceptHeaderLocale.getLanguage());
 		}
 		
 		logger.debug("[determineOverridingLocale] selected systemLocale: {}",systemLocale.getLanguage() );
-		return new Locale(systemLocale.getLanguage());
+		return Locale.of(systemLocale.getLanguage());
 	}
 
 	protected Locale findAcceptHeaderLocale(HttpServletRequest request) {

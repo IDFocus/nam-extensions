@@ -50,11 +50,11 @@ public class TestPwmStore
 		NIDPPrincipal princ = MockNIDP.getPrincipal();
 		List<Integer> codes = store.readScratchCodesFromStore(princ);
 		assertEquals(5, codes.size());
-		assertEquals(new Integer(78636072), codes.get(0));
-		assertEquals(new Integer(81915571), codes.get(1));
-		assertEquals(new Integer(52984984), codes.get(2));
-		assertEquals(new Integer(34278800), codes.get(3));
-		assertEquals(new Integer(88440605), codes.get(4));
+		assertEquals(Integer.valueOf(78636072), codes.get(0));
+		assertEquals(Integer.valueOf(81915571), codes.get(1));
+		assertEquals(Integer.valueOf(52984984), codes.get(2));
+		assertEquals(Integer.valueOf(34278800), codes.get(3));
+		assertEquals(Integer.valueOf(88440605), codes.get(4));
 	}
 
 	@Test
