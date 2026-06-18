@@ -1,13 +1,14 @@
 package nl.idfocus.nam.util;
 
 import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 public class ParameterDebugger
 {
@@ -41,12 +42,13 @@ public class ParameterDebugger
 		}
 	}
 
-	public void showParameters(Map<?, ?> parameters)
+	public void showParameters(Map<String, String[]> parameters)
 	{
 		print( "Showing received parameters");
-		for (Map.Entry<?, ?> entry : parameters.entrySet())
+		for (Map.Entry<String, String[]> entry : parameters.entrySet())
 		{
-			print("Parameter: " + entry.getKey() + " with value: " + entry.getValue());
+			String[] value = entry.getValue();
+			print("Parameter: " + entry.getKey() + " with value: " + ((value != null?Arrays.toString(value):"")));
 		}
 	}
 
