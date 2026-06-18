@@ -28,11 +28,11 @@ import com.novell.nidp.logging.NIDPLog;
 import com.novell.nidp.saml2.SAML2MeDescriptor;
 import com.novell.nidp.saml2.SAMLConstants;
 import com.novell.nidp.saml2.protocol.SAML2AuthnResponse;
+import com.novell.nidp.saml2.protocol.SAML2PConstants;
 import com.novell.nidp.saml2.provider.SAML2MeServiceProvider;
 import com.novell.nidp.saml2.provider.SAML2TrustedIdentityProvider;
 import com.novell.nidp.saml2.provider.metadata.IDPSSODescriptor;
 
-import nl.idfocus.nam.util.Base64;
 import nl.idfocus.nam.util.MockNIDP;
 
 public class TestIDPRedirect
@@ -128,6 +128,16 @@ public class TestIDPRedirect
 		}
 	}
 
+	@Test
+	public void testParseStatusMessage() throws Exception
+	{
+		String msg = "com.novell.nidp.NIDPException: urn:oasis:names:tc:SAML:2.0:status:Responder->urn:oasis:names:tc:SAML:2.0:status:AuthnFailed";
+		IDPStatusMessage status = new IDPStatusMessage(msg);
+		assertEquals(true, status.isValid());
+		assertEquals(SAML2PConstants.STATUS_RESPONDER, status.getPrimaryMessage());
+		assertEquals(SAML2PConstants.STATUS_AUTHNFAILED, status.getSecondaryMessage());
+	}
+
 	private static Object callPrivateMethod(Object target, String methodName, Object... arguments ) throws Exception
 	{
         Method method = target.getClass().getDeclaredMethod(methodName, arguments[0].getClass());
@@ -174,12 +184,6 @@ public class TestIDPRedirect
 		DOMParser parser = new DOMParser();
 		parser.parse(new InputSource(new StringReader(response)));
 		return parser.getDocument();
-	}
-
-	private static Document getDocumentFromBase64String(String response) throws Exception
-	{
-		String decodedResponse = new String(Base64.decode(response));
-		return getDocumentFromString(decodedResponse);
 	}
 
 	private static Properties getDeaultProperties()

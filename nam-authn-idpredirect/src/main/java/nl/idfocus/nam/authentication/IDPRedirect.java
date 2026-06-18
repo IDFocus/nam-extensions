@@ -57,11 +57,13 @@ public class IDPRedirect extends LocalAuthenticationClass
 	public static final String	IDP_ID_TAG					= "idptag";
 	public static final String	SID_TAG						= "sidtag";
 	public static final String	CANCEL_TAG					= "canceltag";
+	public static final String	TARGET_TAG					= "targettag";
 
 	private static final String	NIDP_URL_ROOT				= "nidp";
 	private static final String	NIDP_URL_SEND				= "spsend";
 	private static final String	NIDP_URL_SID				= "sid";
 	private static final String	NIDP_URL_ID					= "id";
+	private static final String	NIDP_URL_TARGET				= "target";
 	private static final String	URL_SEPARATOR				= "/";
 	private static final String	PROPERTY_DEBUG				= "Debug";
 	private static final String	PROPERTY_IDP_ID				= "IdpId";
@@ -131,6 +133,28 @@ public class IDPRedirect extends LocalAuthenticationClass
 
 	private int handleUnsuccessfulResponse()
 	{
+		if (hasSAMLArtifact())
+		{
+			NIDPMessage msg = m_Session.getMessage();
+			if (msg != null)
+			{
+				NIDPError err = (NIDPError)msg;
+				logger.log(Level.FINE, "NIDP error code " + err.getCauseCode() + ": " + err.getCauseStr());
+				// The nidp exception message contains the saml status, but not "cancelled"
+				logger.log(Level.FINE, "NIDP exception message: " + err.getNIDPExceptionMsg());
+				IDPStatusMessage status = new IDPStatusMessage(err.getNIDPExceptionMsg());
+				if (SAML2PConstants.STATUS_RESPONDER.equals(status.getPrimaryMessage()))
+				{
+					logger.log(Level.SEVERE, "Assuming cancel requested by user.");
+					tagSessionAsCancelled();
+					invalidateUserSession();
+					return showCancelPage();					
+				}
+			}
+			logger.log(Level.SEVERE,
+					"No principal created from SAML response, assuming authentication failed.");
+			return technicalFailureOccurred();
+		}
 		if (hasSAMLResponse())
 		{
 			if (isCancelMessage())
@@ -172,12 +196,18 @@ public class IDPRedirect extends LocalAuthenticationClass
 			logger.log(Level.FINE, SAMLConstants.PARM_RESPONSE+" parameter detected");
 			return true;
 		}
+		logger.log(Level.FINE, "*** No "+SAMLConstants.PARM_RESPONSE+" detected");
+		return false;
+	}
+
+	private boolean hasSAMLArtifact()
+	{
 		if (m_Request.getParameter(SAMLConstants.PARM_ARTIFACT) != null)
 		{
 			logger.log(Level.FINE, SAMLConstants.PARM_ARTIFACT+" parameter detected");
 			return true;
 		}
-		logger.log(Level.FINE, "*** No "+SAMLConstants.PARM_RESPONSE+" or "+SAMLConstants.PARM_ARTIFACT+" detected");
+		logger.log(Level.FINE, "*** No "+SAMLConstants.PARM_ARTIFACT+" detected");
 		return false;
 	}
 
@@ -191,16 +221,6 @@ public class IDPRedirect extends LocalAuthenticationClass
 
 	private boolean isCancelMessage()
 	{
-		NIDPMessage msg = m_Session.getMessage();
-		if (msg != null)
-		{
-			logger.log(Level.FINE, "Session Message: " + msg.getUserMessage());
-			NIDPError err = (NIDPError)msg;
-			logger.log(Level.FINE, "NIDP error code " + err.getCauseCode() + ": " + err.getCauseStr());
-			// The nidp exception message contains the saml status, but not "cancelled"
-			// com.novell.nidp.NIDPException: urn:oasis:names:tc:SAML:2.0:status:Responder->urn:oasis:names:tc:SAML:2.0:status:AuthnFailed
-			logger.log(Level.FINE, "NIDP exception message: " + err.getNIDPExceptionMsg());
-		}
 		try
 		{
 			SAML2Status status = getAuthenticationStatus();
@@ -308,13 +328,28 @@ public class IDPRedirect extends LocalAuthenticationClass
 	private int startAuthenticationProcess()
 	{
 		if (hasSAMLRequest())
-		{
 			saveSAMLRequestInSession();
-		}
+		if(hasTarget())
+			saveTargetInSession();
 		if (intermediatePage == null || isRestartAfterCancel())
 			return redirectToExternalIdp();
 		else
 			return showIntermediatePage();
+	}
+
+	private void saveTargetInSession()
+	{
+		String value = m_Request.getParameter(NIDP_URL_TARGET);
+		logger.log(Level.FINE, "Saving "+NIDP_URL_TARGET+" in sessiondata: " + value);
+		m_SessionData.setTarget(value);
+	}
+
+	private boolean hasTarget()
+	{
+		String test = m_Request.getParameter(NIDP_URL_TARGET);
+		if (test != null)
+			return true;
+		return false;
 	}
 
 	private void tagSessionAsCancelled()
@@ -414,6 +449,7 @@ public class IDPRedirect extends LocalAuthenticationClass
 		prepareNewPage(cancelPage);
 		m_PageToShow.addAttribute(IDP_ID_TAG, idpID);
 		m_PageToShow.addAttribute(SID_TAG, retrieveSidAttribute());
+		m_PageToShow.addAttribute(TARGET_TAG, m_SessionData.getTarget());
 		m_PageToShow.addAttribute(SAMLConstants.PARM_REQUEST, retrieveSAMLRequestFromSession());
 		m_PageToShow.addAttribute(NIDPConstants.ATTR_ERR, "U heeft het inloggen geannuleerd.");
 		m_PageToShow.showPage(m_Request, m_Response);
