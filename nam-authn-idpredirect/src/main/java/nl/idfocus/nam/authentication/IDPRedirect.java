@@ -46,7 +46,7 @@ import nl.idfocus.nam.util.ExistingPrincipalResolver;
 import nl.idfocus.nam.util.ParameterDebugger;
 
 /**
- * Authentication class for NetIQ Access Manager 5.0.x that allows immediate
+ * Authentication class for NetIQ Access Manager 5.x that allows immediate
  * redirection to an external IDP.
  * 
  * @author mvreijn@idfocus.nl
@@ -185,8 +185,8 @@ public class IDPRedirect extends LocalAuthenticationClass
 		{
 			this.logger.log(Level.FINE, "Exception during AuthnRequest processing", e);
 		}
-		this.m_Session.reset();
-		this.m_Request.getSession().invalidate();
+		setFailure();
+		m_Session.logout(false);
 	}
 
 	private boolean hasSAMLResponse()
